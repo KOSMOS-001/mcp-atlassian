@@ -15,6 +15,24 @@ logger = logging.getLogger(__name__)
 F = TypeVar("F", bound=Callable[..., Awaitable[Any]])
 
 
+def convert_empty_defaults_to_none(func: Callable) -> Callable:
+    """
+    Decorator that converts empty string default values to None.
+    This is useful for FastMCP tools where empty strings might be passed as defaults
+    but the underlying API expects None for optional parameters.
+    """
+
+    @wraps(func)
+    async def wrapper(ctx: Context, *args: Any, **kwargs: Any) -> Any:
+        # Convert empty strings to None in kwargs
+        for key, value in list(kwargs.items()):
+            if value == "":
+                kwargs[key] = None
+        return await func(ctx, *args, **kwargs)
+
+    return wrapper
+
+
 def check_write_access(func: F) -> F:
     """
     Decorator for FastMCP tools to check if the application is in read-only mode.
